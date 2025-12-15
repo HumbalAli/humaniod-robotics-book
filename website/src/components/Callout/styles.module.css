@@ -1,0 +1,89 @@
+.callout {
+  border-left: 4px solid;
+  border-radius: 0 4px 4px 0;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: #f8f9fa;
+}
+
+.callout .header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.callout .icon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.callout .label {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05rem;
+}
+
+.callout .content {
+  padding-left: 1.5rem;
+}
+
+/* Note type */
+.callout.note {
+  border-left-color: #007bff;
+  background-color: #f0f8ff;
+}
+
+.callout.note .label {
+  color: #007bff;
+}
+
+/* Tip type */
+.callout.tip {
+  border-left-color: #28a745;
+  background-color: #f0fff0;
+}
+
+.callout.tip .label {
+  color: #28a745;
+}
+
+/* Info type */
+.callout.info {
+  border-left-color: #17a2b8;
+  background-color: #f0fcff;
+}
+
+.callout.info .label {
+  color: #17a2b8;
+}
+
+/* Caution type */
+.callout.caution {
+  border-left-color: #ffc107;
+  background-color: #fffcf0;
+}
+
+.callout.caution .label {
+  color: #ffc107;
+}
+
+/* Danger type */
+.callout.danger {
+  border-left-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.callout.danger .label {
+  color: #dc3545;
+}
+
+/* Success type */
+.callout.success {
+  border-left-color: #28a745;
+  background-color: #f0fff0;
+}
+
+.callout.success .label {
+  color: #28a745;
+}

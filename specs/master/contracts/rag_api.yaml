@@ -1,0 +1,92 @@
+openapi: 3.0.0
+info:
+  title: RAG Chatbot API
+  version: 1.0.0
+  description: API for interacting with the Retrieval Augmented Generation chatbot for the Physical AI & Humanoid Robotics Book.
+
+servers:
+  - url: /api/v1
+    description: Primary API server
+
+paths:
+  /query:
+    post:
+      summary: Submit a natural language query to the RAG chatbot
+      operationId: submitQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+                - user_id
+              properties:
+                query:
+                  type: string
+                  description: The natural language query from the user.
+                  example: "What is Physical AI?"
+                user_id:
+                  type: string
+                  description: Unique identifier for the user.
+                  example: "user123"
+                session_id:
+                  type: string
+                  description: Optional session ID for conversational context.
+                  example: "chat_session_abc"
+      responses:
+        '200':
+          description: Successful response from the chatbot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: The chatbot's generated response based on the RAG process.
+                    example: "Physical AI combines robotics and artificial intelligence to enable machines to interact with the physical world."
+                  context_references:
+                    type: array
+                    description: List of references to the book content used to generate the response.
+                    items:
+                      type: object
+                      properties:
+                        chapter_id:
+                          type: string
+                          example: "intro_to_physical_ai"
+                        section_title:
+                          type: string
+                          example: "Defining Physical AI"
+                        page_number:
+                          type: integer
+                          example: 15
+        '400':
+          description: Invalid request or missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Query or user_id is missing."
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "An unexpected error occurred."
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string

@@ -1,0 +1,28 @@
+# Node.js/TypeScript
+node_modules/
+dist/
+build/
+*.log
+.env*
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Docusaurus
+.docusaurus/
+.cache/
+
+# Universal
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+nul
