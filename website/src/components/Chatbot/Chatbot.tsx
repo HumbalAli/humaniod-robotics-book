@@ -9,29 +9,28 @@ interface Message {
   timestamp: Date;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_RAG_BACKEND || 'http://localhost:8000/chat';
-
 const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm your AI assistant for Physical AI & Humanoid Robotics. Ask me anything about robotics, AI, or the book content!",
+      content:
+        "Hello! I'm your AI assistant for Physical AI & Humanoid Robotics. Ask me anything about robotics, AI, or the book content!",
       role: 'assistant',
       timestamp: new Date(),
     },
   ]);
+
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-
+  // Scroll to bottom whenever messages update
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent | React.KeyboardEvent) => {
+    if ('preventDefault' in e) e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
@@ -45,38 +44,40 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(BACKEND_URL, {
+      const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: inputValue, user_id: 'website-user' }),
+        body: JSON.stringify({ message: userMessage.content, user_id: 'website-user' }),
       });
-
-      let botMessage: Message;
 
       if (response.ok) {
         const data = await response.json();
-        botMessage = {
+        const botMessage: Message = {
           id: Date.now().toString(),
-          content: data.response || "Sorry, I don't have an answer for that.",
+          content: data.response || "Sorry, I couldn't find an answer.",
           role: 'assistant',
           timestamp: new Date(),
         };
+        setMessages(prev => [...prev, botMessage]);
       } else {
-        botMessage = {
-          id: Date.now().toString(),
-          content: "I'm sorry, I couldn't process your question. The RAG backend might not be running.",
-          role: 'assistant',
-          timestamp: new Date(),
-        };
+        setMessages(prev => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            content:
+              "I'm sorry, I couldn't process your question. The RAG backend might not be running.",
+            role: 'assistant',
+            timestamp: new Date(),
+          },
+        ]);
       }
-
-      setMessages(prev => [...prev, botMessage]);
-    } catch (err) {
+    } catch (error) {
       setMessages(prev => [
         ...prev,
         {
           id: Date.now().toString(),
-          content: "I'm sorry, there was an error communicating with the backend.",
+          content:
+            "I'm sorry, I encountered an error. The RAG backend might not be running.",
           role: 'assistant',
           timestamp: new Date(),
         },
@@ -86,13 +87,21 @@ const Chatbot: React.FC = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      handleSubmit(e);
+    }
+  };
+
   return (
     <div className={styles.chatbotContainer}>
+      {/* Header */}
       <div className={styles.chatbotHeader}>
         <h3>🤖 Robotics AI Assistant</h3>
         <p>Ask questions about Physical AI & Humanoid Robotics</p>
       </div>
 
+      {/* Messages */}
       <div className={styles.chatbotMessages}>
         {messages.map(msg => (
           <div
@@ -113,9 +122,9 @@ const Chatbot: React.FC = () => {
           <div className={clsx(styles.message, styles.assistantMessage)}>
             <div className={styles.messageContent}>
               <div className={styles.typingIndicator}>
-                <span />
-                <span />
-                <span />
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
             </div>
           </div>
@@ -124,11 +133,13 @@ const Chatbot: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input */}
       <form onSubmit={handleSubmit} className={styles.chatbotInputForm}>
         <input
           type="text"
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Ask about robotics, AI, or book content..."
           className={styles.chatbotInput}
           disabled={isLoading}
