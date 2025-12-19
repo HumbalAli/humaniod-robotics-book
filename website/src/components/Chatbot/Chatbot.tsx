@@ -13,26 +13,29 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content:
-        "Hello! I'm your AI assistant for Physical AI & Humanoid Robotics. Ask me anything about robotics, AI, or the book content!",
+      content: "Hello! I'm your AI assistant for Physical AI & Humanoid Robotics. Ask me anything about robotics, AI, or the book content!",
       role: 'assistant',
       timestamp: new Date(),
     },
   ]);
-
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   // Scroll to bottom whenever messages update
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent | React.KeyboardEvent) => {
-    if ('preventDefault' in e) e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
+    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
@@ -44,76 +47,62 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/chat', {
+      const response = await fetch('https://humbal-backend.hf.space/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage.content, user_id: 'website-user' }),
+        body: JSON.stringify({ message: inputValue, user_id: 'website_user' }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const botMessage: Message = {
           id: Date.now().toString(),
-          content: data.response || "Sorry, I couldn't find an answer.",
+          content: data.response || "I don't know.",
           role: 'assistant',
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, botMessage]);
       } else {
-        setMessages(prev => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            content:
-              "I'm sorry, I couldn't process your question. The RAG backend might not be running.",
-            role: 'assistant',
-            timestamp: new Date(),
-          },
-        ]);
-      }
-    } catch (error) {
-      setMessages(prev => [
-        ...prev,
-        {
+        const fallbackMessage: Message = {
           id: Date.now().toString(),
-          content:
-            "I'm sorry, I encountered an error. The RAG backend might not be running.",
+          content: "I'm sorry, I couldn't process your question. The RAG backend might not be running.",
           role: 'assistant',
           timestamp: new Date(),
-        },
-      ]);
+        };
+        setMessages(prev => [...prev, fallbackMessage]);
+      }
+    } catch (error) {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "I'm sorry, I encountered an error. The RAG backend might not be running.",
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      handleSubmit(e);
-    }
-  };
-
   return (
     <div className={styles.chatbotContainer}>
-      {/* Header */}
       <div className={styles.chatbotHeader}>
         <h3>🤖 Robotics AI Assistant</h3>
         <p>Ask questions about Physical AI & Humanoid Robotics</p>
       </div>
 
-      {/* Messages */}
       <div className={styles.chatbotMessages}>
-        {messages.map(msg => (
+        {messages.map((message) => (
           <div
-            key={msg.id}
+            key={message.id}
             className={clsx(
               styles.message,
-              msg.role === 'user' ? styles.userMessage : styles.assistantMessage
+              message.role === 'user' ? styles.userMessage : styles.assistantMessage
             )}
           >
-            <div className={styles.messageContent}>{msg.content}</div>
+            <div className={styles.messageContent}>{message.content}</div>
             <div className={styles.messageTimestamp}>
-              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         ))}
@@ -133,13 +122,11 @@ const Chatbot: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <form onSubmit={handleSubmit} className={styles.chatbotInputForm}>
         <input
           type="text"
           value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(e) => setInputValue(e.target.value)}
           placeholder="Ask about robotics, AI, or book content..."
           className={styles.chatbotInput}
           disabled={isLoading}
