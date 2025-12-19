@@ -9,22 +9,22 @@ interface Message {
   timestamp: Date;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_RAG_BACKEND || 'http://localhost:8000/chat';
+
 const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hello! I\'m your AI assistant for Physical AI & Humanoid Robotics. Ask me anything about robotics, AI, or the book content!',
+      content: "Hello! I'm your AI assistant for Physical AI & Humanoid Robotics. Ask me anything about robotics, AI, or the book content!",
       role: 'assistant',
       timestamp: new Date(),
-    }
+    },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   useEffect(() => {
     scrollToBottom();
@@ -34,59 +34,53 @@ const Chatbot: React.FC = () => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       role: 'user',
       timestamp: new Date(),
     };
-
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      // Call our local RAG API backend
-      const response = await fetch('http://localhost:8000/chat', {
+      const response = await fetch(BACKEND_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: inputValue,
-          user_id: 'website-user',
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: inputValue, user_id: 'website-user' }),
       });
+
+      let botMessage: Message;
 
       if (response.ok) {
         const data = await response.json();
-        const botMessage: Message = {
+        botMessage = {
           id: Date.now().toString(),
-          content: data.response,
+          content: data.response || "Sorry, I don't have an answer for that.",
           role: 'assistant',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, botMessage]);
       } else {
-        // Fallback response if backend is not available
-        const fallbackMessage: Message = {
+        botMessage = {
           id: Date.now().toString(),
-          content: `I'm sorry, I couldn't process your question right now. The RAG backend might not be running. You can ask me anything about Physical AI & Humanoid Robotics!`,
+          content: "I'm sorry, I couldn't process your question. The RAG backend might not be running.",
           role: 'assistant',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, fallbackMessage]);
       }
-    } catch (error) {
-      // Fallback response if there's an error
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        content: `I'm sorry, I encountered an error. The RAG backend might not be running. You can ask me anything about Physical AI & Humanoid Robotics!`,
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
+
+      setMessages(prev => [...prev, botMessage]);
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          content: "I'm sorry, there was an error communicating with the backend.",
+          role: 'assistant',
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -100,33 +94,33 @@ const Chatbot: React.FC = () => {
       </div>
 
       <div className={styles.chatbotMessages}>
-        {messages.map((message) => (
+        {messages.map(msg => (
           <div
-            key={message.id}
+            key={msg.id}
             className={clsx(
               styles.message,
-              message.role === 'user' ? styles.userMessage : styles.assistantMessage
+              msg.role === 'user' ? styles.userMessage : styles.assistantMessage
             )}
           >
-            <div className={styles.messageContent}>
-              {message.content}
-            </div>
+            <div className={styles.messageContent}>{msg.content}</div>
             <div className={styles.messageTimestamp}>
-              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         ))}
+
         {isLoading && (
           <div className={clsx(styles.message, styles.assistantMessage)}>
             <div className={styles.messageContent}>
               <div className={styles.typingIndicator}>
-                <span></span>
-                <span></span>
-                <span></span>
+                <span />
+                <span />
+                <span />
               </div>
             </div>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -134,7 +128,7 @@ const Chatbot: React.FC = () => {
         <input
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={e => setInputValue(e.target.value)}
           placeholder="Ask about robotics, AI, or book content..."
           className={styles.chatbotInput}
           disabled={isLoading}
