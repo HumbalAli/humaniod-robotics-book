@@ -10,6 +10,7 @@ interface Message {
 }
 
 const FloatingChatbot: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -29,6 +30,10 @@ const FloatingChatbot: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const toggleChatbot = () => {
+    setIsOpen(!isOpen);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,61 +98,86 @@ const FloatingChatbot: React.FC = () => {
   };
 
   return (
-    <div className={styles.chatbotContainer}>
-      <div className={styles.chatbotHeader}>
-        <h3>🤖 Robotics AI Assistant</h3>
-        <p>Ask questions about Physical AI & Humanoid Robotics</p>
-      </div>
+    <>
+      {/* Floating Chatbot Button */}
+      <button
+        className={clsx(styles.chatbotButton, isOpen && styles.hidden)}
+        onClick={toggleChatbot}
+        aria-label="Open AI Assistant"
+      >
+        <div className={styles.chatbotIcon}>🤖</div>
+      </button>
 
-      <div className={styles.chatbotMessages}>
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={clsx(
-              styles.message,
-              message.role === 'user' ? styles.userMessage : styles.assistantMessage
-            )}
-          >
-            <div className={styles.messageContent}>
-              {message.content}
-            </div>
-            <div className={styles.messageTimestamp}>
-              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
+      {/* Chatbot Overlay/Sidebar */}
+      <div className={clsx(styles.chatbotOverlay, isOpen && styles.open)}>
+        <div className={styles.chatbotSidebar}>
+          {/* Header */}
+          <div className={styles.chatbotHeader}>
+            <h3>🤖 Robotics AI Assistant</h3>
+            <button
+              className={styles.closeButton}
+              onClick={toggleChatbot}
+              aria-label="Close chat"
+            >
+              ✕
+            </button>
           </div>
-        ))}
-        {isLoading && (
-          <div className={clsx(styles.message, styles.assistantMessage)}>
-            <div className={styles.messageContent}>
-              <div className={styles.typingIndicator}>
-                <span></span>
-                <span></span>
-                <span></span>
+
+          {/* Chat Messages */}
+          <div className={styles.chatMessages}>
+            {messages.map((message) => (
+              <div key={message.id} className={styles.message}>
+                <div className={clsx(
+                  styles.messageContent,
+                  message.role === 'user' ? styles.userMessage : styles.assistantMessage
+                )}>
+                  {message.content}
+                </div>
               </div>
-            </div>
+            ))}
+            {isLoading && (
+              <div className={styles.message}>
+                <div className={clsx(styles.messageContent, styles.assistantMessage)}>
+                  <div className={styles.typingIndicator}>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        )}
-        <div ref={messagesEndRef} />
+
+          {/* Input Area */}
+          <form onSubmit={handleSubmit} className={styles.chatInputArea}>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Ask about robotics, AI, or book content..."
+              className={styles.chatInput}
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              className={styles.sendButton}
+              disabled={isLoading || !inputValue.trim()}
+            >
+              Send
+            </button>
+          </form>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.chatbotInputForm}>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Ask about robotics, AI, or book content..."
-          className={styles.chatbotInput}
-          disabled={isLoading}
+      {/* Background overlay */}
+      {isOpen && (
+        <div
+          className={styles.overlayBackground}
+          onClick={toggleChatbot}
         />
-        <button
-          type="submit"
-          className={styles.chatbotButton}
-          disabled={isLoading || !inputValue.trim()}
-        >
-          Send
-        </button>
-      </form>
-    </div>
+      )}
+    </>
   );
 };
 
