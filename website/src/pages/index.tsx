@@ -5,7 +5,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 
-import ChatbotWrapper from '../components/Chatbot/ChatbotWrapper';
+import Chatbot from '../components/Chatbot/Chatbot';
 import FloatingChatbot from '../components/FloatingChatbot/FloatingChatbot';
 import styles from './index.module.css';
 
@@ -126,12 +126,16 @@ function HomepageChapters() {
               )}
               style={{animationDelay: `${index * 0.1}s`}}
             >
-              <div className={styles.chapterIcon}>{chapter.icon}</div>
+              <div className={styles.chapterIcon}>
+                {chapter.icon}
+              </div>
               <div className={styles.chapterContent}>
                 <h3 className={styles.chapterTitle}>
                   Chapter {chapter.id.split('-')[0].replace('0', '')}: {chapter.title}
                 </h3>
-                <p className={styles.chapterDescription}>{chapter.description}</p>
+                <p className={styles.chapterDescription}>
+                  {chapter.description}
+                </p>
                 <div className={styles.chapterMeta}>
                   <span className={styles.chapterId}>Chapter {chapter.id.split('-')[0].replace('0', '')}</span>
                   <span className={styles.readMore}>Read →</span>
@@ -165,8 +169,7 @@ export default function Home(): ReactNode {
               </p>
             </div>
             <div className={styles.chatbotContainer}>
-              {/* Use the client-only wrapper */}
-              <ChatbotWrapper />
+              <Chatbot />
             </div>
           </div>
         </section>
