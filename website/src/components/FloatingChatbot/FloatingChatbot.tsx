@@ -53,7 +53,7 @@ const FloatingChatbot: React.FC = () => {
 
     try {
       // Call our local RAG API backend
-      const response = await fetch('http://localhost:8000/chat', {
+      const response = await fetch('https://humbal-backend.hf.space/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
