@@ -142,8 +142,8 @@ const Chatbot: React.FC = () => {
         <button
           type="submit"
           className={styles.chatbotButton}
-          disabled={isLoading || !inputValue.trim()}
-        >
+          disabled={isLoading} // only disabled while loadin
+          >
           Send
         </button>
       </form>
