@@ -20,9 +20,8 @@ const Chatbot: React.FC = () => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
-  // Scroll to bottom whenever messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -31,24 +30,14 @@ const Chatbot: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Submit on Enter key
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as unknown as React.FormEvent);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const messageContent = inputValue.trim();
-
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: messageContent,
+      content: inputValue,
       role: 'user',
       timestamp: new Date(),
     };
@@ -57,42 +46,47 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Send request to FastAPI backend
       const response = await fetch('https://humbal-backend.hf.space/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageContent, user_id: 'website_user' }),
+        body: JSON.stringify({ message: inputValue, user_id: 'website_user' }),
       });
 
       if (response.ok) {
         const data = await response.json();
+
+        // FastAPI response might have 'answer', 'error', or fallback
+        const content =
+          data.answer ||
+          data.error ||
+          "I'm sorry, I don't know the answer to that.";
+
         const botMessage: Message = {
           id: Date.now().toString(),
-          content: data.answer || "I don't know.",
+          content,
           role: 'assistant',
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, botMessage]);
       } else {
-        setMessages(prev => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            content: "I'm sorry, I couldn't process your question. The RAG backend might not be running.",
-            role: 'assistant',
-            timestamp: new Date(),
-          },
-        ]);
-      }
-    } catch (error) {
-      setMessages(prev => [
-        ...prev,
-        {
+        // Backend returned non-200
+        const fallbackMessage: Message = {
           id: Date.now().toString(),
-          content: "I'm sorry, I encountered an error. The RAG backend might not be running.",
+          content: "I'm sorry, I couldn't process your question. The backend might not be running.",
           role: 'assistant',
           timestamp: new Date(),
-        },
-      ]);
+        };
+        setMessages(prev => [...prev, fallbackMessage]);
+      }
+    } catch (error) {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "I'm sorry, I encountered an error. The backend might not be running.",
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +100,7 @@ const Chatbot: React.FC = () => {
       </div>
 
       <div className={styles.chatbotMessages}>
-        {messages.map((message) => (
+        {messages.map(message => (
           <div
             key={message.id}
             className={clsx(
@@ -125,7 +119,9 @@ const Chatbot: React.FC = () => {
           <div className={clsx(styles.message, styles.assistantMessage)}>
             <div className={styles.messageContent}>
               <div className={styles.typingIndicator}>
-                <span></span><span></span><span></span>
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
             </div>
           </div>
@@ -138,8 +134,7 @@ const Chatbot: React.FC = () => {
         <input
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={e => setInputValue(e.target.value)}
           placeholder="Ask about robotics, AI, or book content..."
           className={styles.chatbotInput}
           disabled={isLoading}
